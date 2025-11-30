@@ -1,0 +1,184 @@
+services:
+  jobmanager:
+    image: flink-image:2.0.0-scala_2.12
+    networks:
+      cflt-meetup:
+    build: docker/flink-cluster
+    hostname: "jobmanager"
+    expose:
+      - "6123"
+    ports:
+      - "9081:8081"
+    command: jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - |
+        FLINK_PROPERTIES=
+          jobmanager.rpc.address: jobmanager
+          taskmanager.numberOfTaskSlots: 8
+          parallelism.default: 2
+          classloader.resolve-order: parent-first
+          execution.checkpointing.interval: 10000
+          state.checkpoints.dir: file:///tmp/checkpoints-data/
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+  taskmanager:
+    image: flink-image:2.0.0-scala_2.12
+    networks:
+      cflt-meetup:
+    expose:
+      - "6121"
+      - "6122"
+    depends_on:
+      - jobmanager
+    deploy:
+        replicas: 1
+    command: taskmanager
+    links:
+      - jobmanager:jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 8
+        parallelism.default: 2
+        classloader.resolve-order: parent-first
+        execution.checkpointing.interval: 10000
+        state.checkpoints.dir: file:///tmp/checkpoints-data/
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+  data-generator:
+      image: apache/data-generator:1
+      networks:
+        cflt-meetup:
+      build: docker/data-generator
+      depends_on:
+        - kafka
+        - schema-registry
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    networks:
+      cflt-meetup:
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,INSIDEDOCKER://0.0.0.0:9094
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,INSIDEDOCKER://localhost:9094
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,INSIDEDOCKER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      CLUSTER_ID: 'ciWo7IWazngRchmPES6q5A=='
+
+      # Memory optimization
+      KAFKA_HEAP_OPTS: "-Xmx512M -Xms512M"
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 104857600
+      #Create Topics
+    command: >
+      bash -c "
+        /etc/confluent/docker/run &
+        sleep 10 &&
+        for tpk in transactions kafka rule event agg.transactions; do
+          kafka-topics --bootstrap-server kafka:9092 --create --topic $$tpk --partitions 1 --replication-factor 1 --if-not-exists;
+        done && \
+        wait
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafka:9092 --list | grep -q 'kafka\\|rule\\|event\\|agg.transactions'"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+# Schema Registry Services
+  schema-registry:
+      image: confluentinc/cp-schema-registry:8.0.0
+      networks:
+        cflt-meetup:
+      hostname: schema-registry
+      container_name: schema-registry
+      depends_on:
+        - kafka
+      ports:
+        - "8081:8081"
+      environment:
+        SCHEMA_REGISTRY_HOST_NAME: schema-registry
+        SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: 'kafka:9092'
+        SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+# Iceberg Services
+  rest:
+      image: apache/iceberg-rest-fixture
+      networks:
+        cflt-meetup:
+      container_name: iceberg-rest
+      ports:
+        - 8181:8181
+      environment:
+        - AWS_ACCESS_KEY_ID=admin
+        - AWS_SECRET_ACCESS_KEY=password
+        - AWS_REGION=us-east-1
+        - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
+        - CATALOG_S3_ENDPOINT=http://minio:9000
+        - CATALOG_WAREHOUSE=s3://warehouse/
+# minio Service
+  minio:
+      image: minio/minio
+      networks:
+          cflt-meetup:
+            aliases:
+              - warehouse.minio
+              - warehouse.localhost
+      container_name: minio
+      environment:
+        - MINIO_ROOT_USER=admin
+        - MINIO_ROOT_PASSWORD=password
+        - MINIO_DOMAIN=minio
+      ports:
+        - 9001:9001
+        - 9000:9000
+      command: ["server", "/data", "--console-address", ":9001"]
+  mc:
+      depends_on:
+        - minio
+      image: minio/mc
+      networks:
+        cflt-meetup:
+      container_name: mc
+      environment:
+        - AWS_ACCESS_KEY_ID=admin
+        - AWS_SECRET_ACCESS_KEY=password
+        - AWS_REGION=us-east-1
+      entrypoint: |
+        /bin/sh -c "
+        until (/usr/bin/mc alias set minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
+        /usr/bin/mc rm -r --force minio/warehouse;
+        /usr/bin/mc mb minio/warehouse;
+        /usr/bin/mc policy set public minio/warehouse;
+        tail -f /dev/null
+        "
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    restart: "no"
+    networks:
+      cflt-meetup:
+    ports:
+      - "10000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: "kafka:9092"
+      SCHEMAREGISTRY_CONNECT: "http://schema-registry:8081"
+    depends_on:
+      - "kafka"
+      - "schema-registry"
+networks:
+  cflt-meetup:

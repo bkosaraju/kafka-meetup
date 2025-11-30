@@ -1,0 +1,102 @@
+import java.nio.file.Files
+plugins {
+    id "java-library"
+    id "com.github.johnrengelman.shadow" version "7.0.0"
+    id "com.adarshr.test-logger" version "3.0.0"
+}
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+group = 'com.synapsewerx.flinksink'
+
+ext {
+    flinkVersion = "2.0.1"
+    scalaVariant = "2.12"
+    junitVersion = "5.7.2"
+}
+
+repositories {
+    mavenCentral()
+    maven {
+        url = "https://packages.confluent.io/maven/"
+    }
+}
+
+configurations {
+    assembly
+    compile.extendsFrom assembly
+}
+
+configurations {
+    provided
+    compile.extendsFrom provided
+}
+
+configurations {
+    testImplementation.extendsFrom compileOnly
+}
+
+test {
+    useJUnitPlatform()
+}
+dependencies {
+//    api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36'
+    compileOnly group: 'org.projectlombok', name:'lombok', version: '1.18.26'
+
+    compileOnly group: 'org.apache.flink', name: 'flink-streaming-java', version: '2.0.1'
+    compileOnly group: 'org.apache.flink', name: 'flink-connector-base', version: '2.0.1'
+    implementation group: 'org.apache.flink', name: 'flink-table-planner_2.12', version: '2.0.1'
+    testImplementation group: 'org.apache.flink', name: 'flink-table-api-scala-bridge_2.12', version: '2.0.1'
+    //implementation group: 'org.apache.flink', name: ' flink-table-api-java', version: '2.0.1'
+
+
+    //implementation group: 'org.apache.flink', name: 'flink-streaming-scala_2.12', version: "$flinkVersion"
+    //compileOnly group: 'org.apache.flink', name: 'flink-table-planner_2.12', version: "$flinkVersion"
+    //implementation group: 'org.apache.flink', name: 'flink-table-api-scala-bridge_2.12', version: "$flinkVersion"
+
+    implementation group: 'org.apache.flink', name: 'flink-connector-kafka', version: '4.0.0-2.0'
+    implementation group: 'org.apache.kafka', name: 'kafka-clients', version: '4.0.0'
+    implementation group: 'org.apache.flink', name: 'flink-connector-jdbc-core', version: '4.0.0-2.0'
+
+    compileOnly "org.apache.flink:flink-clients:${flinkVersion}"
+    compileOnly group: 'org.apache.flink', name: 'flink-table-runtime', version: "$flinkVersion"
+    implementation group: 'org.apache.flink', name: 'flink-json', version: "$flinkVersion"
+
+    //compileOnly 'commons-io:commons-io:2.9.0'
+    //testLibraries
+//    testImplementation group: 'org.apache.flink', name: 'flink-test-utils', version: "$flinkVersion"
+    testImplementation ("org.apache.flink:flink-test-utils:2.0.1")
+//            {
+//        exclude group: 'org.apache.flink', module:'flink-shaded-guava'
+//    }
+//     testImplementation 'org.apache.flink:flink-shaded-guava:18.0-9.0'
+    //testImplementation 'org.apache.flink:flink-shaded-guava:33.4.0-jre-20.0'
+
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: "$junitVersion"
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: "$junitVersion"
+    testImplementation group: 'org.junit.platform', name: 'junit-platform-runner', version: '1.8.0'
+    //implementation group: 'com.mysql', name: 'mysql-connector-j', version: '9.5.0'
+
+    implementation group: 'org.apache.iceberg', name: 'iceberg-flink-2.0', version: '1.10.0'
+    implementation group: 'org.apache.iceberg', name: 'iceberg-aws', version: '1.10.0'
+    implementation group: 'org.apache.iceberg', name: 'iceberg-aws-bundle', version: '1.10.0'
+    compileOnly group: 'org.apache.flink', name: 'flink-avro-confluent-registry', version: '2.0.1'
+    testImplementation group: 'org.apache.flink', name: 'flink-connector-datagen', version: '2.0.1'
+    //implementation group: 'io.confluent', name: 'kafka-schema-registry-client', version: '8.0.0'
+    implementation group: 'io.confluent', name: 'kafka-avro-serializer', version: '8.0.0'
+    testImplementation group: 'org.apache.flink', name: 'flink-runtime-web', version: '2.0.1'
+//    implementation group: 'org.apache.iceberg', name: 'iceberg-flink-runtime-2.0', version: '1.10.0'
+    implementation group: 'org.apache.iceberg', name: 'iceberg-flink', version: '1.10.0'
+    implementation group: 'org.apache.iceberg', name: 'iceberg-core', version: '1.10.0'
+    implementation group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.4.2'
+    implementation group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: '3.4.2'
+    implementation 'org.apache.hadoop:hadoop-aws:3.3.6'
+
+    // You might also need the specific AWS SDK implementation for the S3A client to work
+    runtimeOnly 'com.amazonaws:aws-java-sdk-bundle:1.12.26'
+    implementation group: 'org.apache.flink', name: 'flink-metrics-dropwizard', version: '2.0.1'
+    implementation 'org.apache.flink:flink-connector-files:2.0.1'
+}
