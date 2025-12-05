@@ -7,6 +7,7 @@ import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.configuration.CheckpointingOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.RestOptions;
+import org.apache.flink.connector.kafka.dynamic.source.DynamicKafkaSource;
 import org.apache.flink.runtime.testutils.MiniClusterResourceConfiguration;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
@@ -60,7 +61,8 @@ class LauncherTest {
         env.getCheckpointConfig().setMaxConcurrentCheckpoints(1);
         env.getCheckpointConfig().enableUnalignedCheckpoints();
 
-        SourceReader sourceReader = new SourceReader(env, FlinkUtils.getResourceConfigurations(null));
+        //SourceReader sourceReader = new SourceReader(env, FlinkUtils.getResourceConfigurations(null));
+        DynamicSourceReader sourceReader = new DynamicSourceReader(env, FlinkUtils.getResourceConfigurations(null));
         sourceReader.getRawStream();
 //        env.fromElements(1, 2, 3, 4, 5) // DataStream<Integer>
 //

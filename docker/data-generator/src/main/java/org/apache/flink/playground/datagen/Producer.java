@@ -21,8 +21,8 @@ package org.apache.flink.playground.datagen;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Properties;
-import org.apache.flink.playground.datagen.model.TransactionV1Supplier;
-import org.apache.flink.playground.datagen.model.TransactionsV1;
+import org.apache.flink.playground.datagen.model.AccountV1Supplier;
+import org.apache.flink.playground.datagen.model.AccountV1;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -36,6 +36,7 @@ public class Producer implements Runnable, AutoCloseable {
   private final String brokers;
 
   private final String topic;
+  String generatoClasName;
 
   public Producer(String brokers, String topic) {
     this.brokers = brokers;
@@ -45,21 +46,21 @@ public class Producer implements Runnable, AutoCloseable {
 
   @Override
   public void run() {
-    KafkaProducer<Long, TransactionsV1> producer = new KafkaProducer<>(getProperties());
+    KafkaProducer<Long, AccountV1> producer = new KafkaProducer<>(getProperties());
 
     Throttler throttler = new Throttler(1);
 
-    TransactionV1Supplier transactions = new TransactionV1Supplier();
+    AccountV1Supplier transactions = new AccountV1Supplier();
 
     while (isRunning) {
 
-      TransactionsV1 transaction = transactions.get();
+      AccountV1 transaction = transactions.get();
 
       long millis = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
 
-      ProducerRecord<Long, TransactionsV1> record =
-          new ProducerRecord<Long, TransactionsV1>(
-              topic, null, millis, transaction.getAccountId(), transaction);
+      ProducerRecord<Long, AccountV1> record =
+          new ProducerRecord<Long, AccountV1>(
+              topic, null, null, transaction.getAccountId(), transaction);
       producer.send(record);
 
       try {
@@ -87,7 +88,7 @@ public class Producer implements Runnable, AutoCloseable {
     props.put(
         ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
         io.confluent.kafka.serializers.KafkaAvroSerializer.class.getName());
-    props.put("schema.registry.url", "http://schema-registry:8081");
+    props.put("schema.registry.url", "http://localhost:8081");
     props.put(
         "value.subject.name.strategy", "io.confluent.kafka.serializers.subject.RecordNameStrategy");
     props.put("auto.register.schemas", "true");

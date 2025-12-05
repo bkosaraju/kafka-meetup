@@ -38,12 +38,27 @@ configurations {
     testImplementation.extendsFrom compileOnly
 }
 
+configurations {
+    runtimeClasspathJars {
+        canBeResolved = true
+        canBeConsumed = false
+        extendsFrom configurations.implementation
+    }
+}
+
 test {
     useJUnitPlatform()
 }
+
+shadowJar {
+    zip64 = true
+        manifest {
+            attributes 'Main-Class': 'com.synapsewerx.flinksink.Launcher'
+        }
+}
 dependencies {
 //    api group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36'
-    compileOnly group: 'org.projectlombok', name:'lombok', version: '1.18.26'
+    compileOnly group: 'org.projectlombok', name: 'lombok', version: '1.18.26'
 
     compileOnly group: 'org.apache.flink', name: 'flink-streaming-java', version: '2.0.1'
     compileOnly group: 'org.apache.flink', name: 'flink-connector-base', version: '2.0.1'
@@ -67,7 +82,7 @@ dependencies {
     //compileOnly 'commons-io:commons-io:2.9.0'
     //testLibraries
 //    testImplementation group: 'org.apache.flink', name: 'flink-test-utils', version: "$flinkVersion"
-    testImplementation ("org.apache.flink:flink-test-utils:2.0.1")
+    testImplementation("org.apache.flink:flink-test-utils:2.0.1")
 //            {
 //        exclude group: 'org.apache.flink', module:'flink-shaded-guava'
 //    }
@@ -93,10 +108,14 @@ dependencies {
     implementation group: 'org.apache.iceberg', name: 'iceberg-core', version: '1.10.0'
     implementation group: 'org.apache.hadoop', name: 'hadoop-common', version: '3.4.2'
     implementation group: 'org.apache.hadoop', name: 'hadoop-mapreduce-client-core', version: '3.4.2'
-    implementation 'org.apache.hadoop:hadoop-aws:3.3.6'
-
-    // You might also need the specific AWS SDK implementation for the S3A client to work
-    runtimeOnly 'com.amazonaws:aws-java-sdk-bundle:1.12.26'
+//    implementation 'org.apache.hadoop:hadoop-aws:3.3.6'
+//    runtimeOnly 'com.amazonaws:aws-java-sdk-bundle:1.12.26'
     implementation group: 'org.apache.flink', name: 'flink-metrics-dropwizard', version: '2.0.1'
-    implementation 'org.apache.flink:flink-connector-files:2.0.1'
+}
+
+task copyImplementationApiJars(type: Copy) {
+    def outputDir = "$buildDir/deps"
+    from configurations.runtimeClasspathJars
+    into outputDir
+    include '*.jar'
 }

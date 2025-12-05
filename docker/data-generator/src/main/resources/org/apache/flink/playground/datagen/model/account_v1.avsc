@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "AccountV1",
+  "namespace": "org.apache.flink.playground.datagen.model",
+  "fields": [
+    {
+      "name": "accountId",
+      "type": "long"
+    },
+    {
+      "name": "accountName",
+      "type": "string"
+    }
+  ]
+}

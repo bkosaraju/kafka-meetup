@@ -109,6 +109,11 @@ under the License.
                                 <excludes>
                                 </excludes>
                             </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.apache.flink.playground.datagen.DataGenerator</mainClass>
+                                </transformer>
+                            </transformers>
                             <filters>
                                 <filter>
                                     <!-- Do not copy the signatures in the META-INF folder.
@@ -159,29 +164,29 @@ under the License.
             </plugin>
 
             <!-- Java code style -->
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <version>${spotless-maven-plugin.version}</version>
-                <configuration>
-                    <java>
-                        <googleJavaFormat>
-                            <version>1.7</version>
-                            <style>GOOGLE</style>
-                        </googleJavaFormat>
-                        <removeUnusedImports/>
-                    </java>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>spotless-check</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>com.diffplug.spotless</groupId>-->
+<!--                <artifactId>spotless-maven-plugin</artifactId>-->
+<!--                <version>${spotless-maven-plugin.version}</version>-->
+<!--                <configuration>-->
+<!--                    <java>-->
+<!--                        <googleJavaFormat>-->
+<!--                            <version>1.7</version>-->
+<!--                            <style>GOOGLE</style>-->
+<!--                        </googleJavaFormat>-->
+<!--                        <removeUnusedImports/>-->
+<!--                    </java>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>spotless-check</id>-->
+<!--                        <phase>verify</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>check</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
             <!-- AVSC to pojo generation -->
             <plugin>
                 <groupId>org.apache.avro</groupId>
@@ -198,7 +203,7 @@ under the License.
                 <configuration>
                     <sourceDirectory>${project.basedir}/src/main/resources/org/apache/flink/playground/datagen/model/</sourceDirectory>
                     <includes>
-                        <include>transactions.avsc</include>
+                        <include>*.avsc</include>
                     </includes>
                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                 </configuration>

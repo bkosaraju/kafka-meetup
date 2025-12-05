@@ -1,6 +1,3 @@
-# Reference: https://github.com/github/gitignore
-# From: https://gist.github.com/edesdan/6bb43343740bcd54ef0f56a384a2f66f
-
 
 # Folder view configuration files
 .DS_Store
@@ -125,5 +122,8 @@ buildNumber.properties
 
 # Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
 !/.mvn/wrapper/maven-wrapper.jar
+!docker/data-generator/apps/*.jar
 docker/data-generator/target
 /.idea/
+/docker/data-generator/settings.xml
+/.env

@@ -1,0 +1,19 @@
+{
+  "type": "record",
+  "name": "TransactionsV1",
+  "namespace": "org.apache.flink.playground.datagen.model",
+  "fields": [
+    {
+      "name": "accountId",
+      "type": "long"
+    },
+    {
+      "name": "amount",
+      "type": "int"
+    },
+    {
+      "name": "timestamp",
+      "type": "string"
+    }
+  ]
+}

@@ -20,10 +20,7 @@ public class FlinkSink {
     public void startApp() throws Exception {
         StreamExecutionEnvironment env = FlinkUtils.createStreamExecutionEnvironment();
         HashMap<String, String> appConfigurations = FlinkUtils.getResourceConfigurations(appConfig);
-        appConfigurations.forEach((key, value) -> {
-            System.out.printf("%s=%s\n", key, value);
-        });
-        new SourceReader(env, appConfigurations).getRawStream();
+        new DynamicSourceReader(env, appConfigurations).getRawStream();
         //String executionPlan = env.getExecutionPlan();
        env.execute("CFLT meetup sink");
         //System.out.println(cfltMeetupSink.getJobExecutionResult());

@@ -21,7 +21,6 @@ package org.apache.flink.playground.datagen.model;
 import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.Random;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
@@ -48,8 +47,6 @@ public class TransactionV1Supplier implements Supplier<TransactionsV1> {
     transaction.setAccountId(accounts.next());
     transaction.setAmount(generator.nextInt(1000));
     transaction.setTimestamp(timestamps.next().toString());
-    // Update Schema to add transactionId field
-    transaction.setTransactionId(UUID.randomUUID().toString());
     return transaction;
   }
 }

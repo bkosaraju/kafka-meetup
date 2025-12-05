@@ -27,16 +27,4 @@ public class KafkaRecord {
         this.rowData = rowData;
         this.schema = schema;
     }
-
-//    public KafkaRecord(String topic, byte[] key, byte[] value, Headers headers, long timestamp, int partition, long offset, RowData rowData, Schema schema) {
-//        this.topic = topic;
-//        this.key = key;
-//        this.value = value;
-//        this.headers = headers;
-//        this.timestamp = timestamp;
-//        this.partition = partition;
-//        this.offset = offset;
-//        this.rowData = rowData;
-//        this.schema = schema;
-//    }
 }

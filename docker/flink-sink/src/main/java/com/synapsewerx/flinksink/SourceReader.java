@@ -26,6 +26,7 @@ import org.apache.iceberg.flink.sink.dynamic.DynamicRecord;
 import org.apache.iceberg.flink.source.IcebergSource;
 import org.apache.iceberg.flink.source.StreamingStartingStrategy;
 import org.apache.iceberg.flink.source.assigner.SimpleSplitAssignerFactory;
+import org.apache.kafka.clients.consumer.OffsetResetStrategy;
 
 import java.time.Duration;
 import java.util.*;
@@ -57,13 +58,13 @@ public class SourceReader {
         final String BOOTSTRAP_SERVERS = config.get("bootstrap.servers");
         final String SCHEMA_REGISTRY_URL = config.get("schema.registry.url");
         final String GROUP_ID = config.get("group.id");
-        final List<String> TOPIC_LIST = Arrays.stream(config.get("topic.list").split(",")).map(String::trim).toList();
+//        final List<String> TOPIC_LIST = Arrays.stream(config.get("topic.list").split(",")).map(String::trim).toList();
         final CatalogLoader icebergCatalog = FlinkUtils.getIcebergCatalogLoader(config);
         KafkaSource<DynamicRecord> source = KafkaSource.<DynamicRecord>builder()
                 .setBootstrapServers(BOOTSTRAP_SERVERS)
-                .setTopics(TOPIC_LIST)
+//                .setTopics(TOPIC_LIST)
                 .setGroupId(GROUP_ID)
-                .setStartingOffsets(OffsetsInitializer.committedOffsets())
+                .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
                 .setProperty("commit.offsets.on.checkpoint", "true")
                 .setDeserializer(new RecordDeserializer(config))
                 .build();

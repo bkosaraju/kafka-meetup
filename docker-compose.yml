@@ -1,9 +1,10 @@
 services:
   jobmanager:
     image: flink-image:2.0.0-scala_2.12
+    container_name: flink-jobmanager
     networks:
       cflt-meetup:
-    build: docker/flink-cluster
+    build: docker/flink-sink
     hostname: "jobmanager"
     expose:
       - "6123"
@@ -25,6 +26,7 @@ services:
       - AWS_REGION=us-east-1
   taskmanager:
     image: flink-image:2.0.0-scala_2.12
+    container_name: flink-taskmanager
     networks:
       cflt-meetup:
     expose:
@@ -50,16 +52,18 @@ services:
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=password
       - AWS_REGION=us-east-1
-  data-generator:
-      image: apache/data-generator:1
-      networks:
-        cflt-meetup:
-      build: docker/data-generator
-      depends_on:
-        - kafka
-        - schema-registry
+#  data-generator:
+#      image: apache/data-generator:1
+#      container_name: data-generator
+#      networks:
+#        cflt-meetup:
+#      build: docker/data-generator
+#      depends_on:
+#        - kafka
+#        - schema-registry
   kafka:
     image: confluentinc/cp-kafka:latest
+    container_name: kafka
     networks:
       cflt-meetup:
     ports:
@@ -108,8 +112,15 @@ services:
         cflt-meetup:
       hostname: schema-registry
       container_name: schema-registry
+      healthcheck:
+          test: ["CMD-SHELL", "curl -f http://localhost:8081/subjects || exit 1"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+          start_period: 30s
       depends_on:
-        - kafka
+        kafka:
+          condition: service_started
       ports:
         - "8081:8081"
       environment:
@@ -170,6 +181,7 @@ services:
   kafdrop:
     image: obsidiandynamics/kafdrop
     restart: "no"
+    container_name: kafdrop
     networks:
       cflt-meetup:
     ports:
@@ -178,7 +190,46 @@ services:
       KAFKA_BROKERCONNECT: "kafka:9092"
       SCHEMAREGISTRY_CONNECT: "http://schema-registry:8081"
     depends_on:
-      - "kafka"
-      - "schema-registry"
+      schema-registry:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+  flink-sink:
+    image: flink-image:2.0.0-scala_2.12
+    command:
+      - /opt/flink/bin/flink
+      - run
+      - --jobmanager
+      - jobmanager:8081
+      - -D
+      - classloader.resolve-order=parent-first
+      - -c
+      - com.synapsewerx.flinksink.Launcher
+      - /opt/flink/usrlib/flink-sink-all.jar
+    container_name: flink-sink
+    networks:
+      cflt-meetup:
+    depends_on:
+      schema-registry:
+        condition: service_healthy
+      jobmanager:
+        condition: service_started
+      kafka:
+        condition: service_started
+    links:
+      - jobmanager:jobmanager
+    environment:
+      - JOB_MANAGER_RPC_ADDRESS=jobmanager
+      - |
+        FLINK_PROPERTIES=
+          jobmanager.rpc.address: jobmanager
+          taskmanager.numberOfTaskSlots: 8
+          parallelism.default: 2
+          classloader.resolve-order: parent-first
+          execution.checkpointing.interval: 10000
+          state.checkpoints.dir: file:///tmp/checkpoints-data/
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
 networks:
   cflt-meetup:

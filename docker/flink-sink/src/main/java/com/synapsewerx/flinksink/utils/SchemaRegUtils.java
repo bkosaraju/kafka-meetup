@@ -54,7 +54,6 @@ public class SchemaRegUtils {
      */
     public Schema getSchemaById(int id) throws IOException, RestClientException {
         ensureClientInitialized();
-        // This is the direct method call to retrieve the schema by its ID.
         ParsedSchema parsedSchema = client.getSchemaById(id);
         Schema schema =  parsedSchema instanceof AvroSchema ? ((AvroSchema) parsedSchema).rawSchema() : null;
         if (schema == null) {
@@ -73,11 +72,8 @@ public class SchemaRegUtils {
 
         try {
             ByteBuffer buffer = ByteBuffer.wrap(value);
-            // Move the position past the 1-byte Magic Byte (to offset 1)
             buffer.position(1);
-            // Read the 4 bytes at the current position as a big-endian integer
             int schemaId = buffer.getInt();
-            // Return the extracted ID
             return Optional.of(schemaId);
         } catch (Exception e) {
             logger.warn("Error reading ByteBuffer to extract Schema ID: {}", e.getMessage());
@@ -125,4 +121,14 @@ public class SchemaRegUtils {
         newSchema.setFields(newFields);
         return newSchema;
     }
+
+    public String getSchemaTypeById(int id) throws IOException, RestClientException {
+        ensureClientInitialized();
+        ParsedSchema parsedSchema = client.getSchemaById(id);
+        if (parsedSchema == null) {
+            throw new RestClientException("Schema with ID " + id + " not found.", 404, 40401);
+        }
+        return parsedSchema.schemaType();
+    }
+
 }
