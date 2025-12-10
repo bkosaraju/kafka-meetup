@@ -21,9 +21,7 @@ public class FlinkSink {
         StreamExecutionEnvironment env = FlinkUtils.createStreamExecutionEnvironment();
         HashMap<String, String> appConfigurations = FlinkUtils.getResourceConfigurations(appConfig);
         new DynamicSourceReader(env, appConfigurations).getRawStream();
-        //String executionPlan = env.getExecutionPlan();
-       env.execute("CFLT meetup sink");
-        //System.out.println(cfltMeetupSink.getJobExecutionResult());
+        env.execute("Kafka meetup sink");
     }
 
 }

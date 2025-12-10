@@ -19,31 +19,55 @@
 package org.apache.flink.playground.datagen;
 
 import java.util.Optional;
+
+import org.apache.flink.playground.datagen.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** A basic data generator for continuously writing data into a Kafka topic. */
+/**
+ * A basic data generator for continuously writing data into a Kafka topic.
+ */
 public class DataGenerator {
 
-  private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
 
-  private static final String KAFKA =
-      Optional.ofNullable(System.getenv("DATAGEN_KAFKA")).orElse("localhost:9094");
+    private static final Logger LOG = LoggerFactory.getLogger(DataGenerator.class);
 
-  private static final String TOPIC =
-      Optional.ofNullable(System.getenv("DATAGEN_TOPIC")).orElse("accounts");
+    private static final String KAFKA =
+            Optional.ofNullable(System.getenv("DATAGEN_KAFKA")).orElse("localhost:9094");
 
-  public static void main(String[] args) {
-    Producer producer = new Producer(KAFKA, TOPIC);
+    private static final String TOPIC =
+            Optional.ofNullable(System.getenv("DATAGEN_TOPIC")).orElse("accounts");
 
-    Runtime.getRuntime()
-        .addShutdownHook(
-            new Thread(
-                () -> {
-                  LOG.info("Shutting down");
-                  producer.close();
-                }));
+    public static void main(String[] args) {
+        final AutoCloseable generatedProducer;
 
-    producer.run();
-  }
+        if (args.length == 0) {
+            LOG.info("Using default topic {}", TOPIC);
+            generatedProducer = new Producer(KAFKA, TOPIC);
+        } else {
+            LOG.info("producing to target - {}", args[0]);
+            switch (String.valueOf(args[0])) {
+                case "accountsv1" -> generatedProducer = new ProducerV2<>(KAFKA, "accounts", AccountV1Supplier.class);
+                case "transactionsv1" ->
+                        generatedProducer = new ProducerV2<>(KAFKA, "transactions", TransactionV1Supplier.class);
+                case "transactionsv2" ->
+                        generatedProducer = new ProducerV2<>(KAFKA, "transactions", TransactionV2Supplier.class);
+                default -> {
+                    throw new RuntimeException("Unknown target " + args[0]);
+                }
+            }
+        }
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            LOG.info("Shutting down");
+            try {
+                if (generatedProducer != null) generatedProducer.close();
+            } catch (Exception e) {
+                LOG.error("Error closing producer", e);
+            }
+        }));
+
+        if (generatedProducer instanceof Runnable runnableProducer) {
+            runnableProducer.run();
+        }
+    }
 }

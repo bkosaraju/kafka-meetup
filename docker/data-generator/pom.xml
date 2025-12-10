@@ -44,6 +44,7 @@ under the License.
         <java.version>17</java.version>
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
+            <rat.skip>true</rat.skip>
     </properties>
     <repositories>
         <repository>
@@ -76,6 +77,11 @@ under the License.
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
             <version>1.12.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>1.0.2</version>
         </dependency>
     </dependencies>
 

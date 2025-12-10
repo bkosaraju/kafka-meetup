@@ -18,7 +18,10 @@
 
 package org.apache.flink.playground.datagen.model;
 
+import com.github.javafaker.Faker;
+
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
@@ -29,9 +32,12 @@ import java.util.stream.Stream;
 /** A supplier that generates an arbitrary transaction. */
 public class TransactionV2Supplier implements Supplier<TransactionsV2> {
 
-  private final Random generator = new Random();
+    private final Faker faker = new Faker();
+    private final Random generator = new Random();
+    private final Status[] types = Status.values();
 
-  private final Iterator<Long> accounts =
+
+    private final Iterator<Long> accounts =
       Stream.generate(() -> Stream.of(1L, 2L, 3L, 4L, 5L))
           .flatMap(UnaryOperator.identity())
           .iterator();
@@ -44,12 +50,15 @@ public class TransactionV2Supplier implements Supplier<TransactionsV2> {
 
   @Override
   public TransactionsV2 get() {
-    TransactionsV2 transaction = new TransactionsV2();
-    transaction.setAccountId(accounts.next());
-    transaction.setAmount(generator.nextInt(1000));
-    transaction.setTimestamp(timestamps.next().toString());
-    // Update Schema to add transactionId field
-    transaction.setTransactionId(UUID.randomUUID().toString());
+      TransactionsV2 transaction = new TransactionsV2();
+      transaction.setAccountId(generator.nextLong(1000000, 9999999));
+      transaction.setAmount(generator.nextInt(1000));
+      transaction.setTimestamp(timestamps.next().toInstant(ZoneOffset.UTC));
+      transaction.setTransactionId(UUID.randomUUID().toString());
+      transaction.setCurrency(faker.currency().code());
+      transaction.setDescription(faker.lorem().sentence());
+      transaction.setStatus(types[new Random().nextInt(types.length)]);
+      transaction.setCoRelationId(UUID.randomUUID().toString());
     return transaction;
   }
 }

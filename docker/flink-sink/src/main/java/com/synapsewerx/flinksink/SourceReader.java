@@ -54,36 +54,23 @@ public class SourceReader {
 
     public void getRawStream() throws Exception {
 
-    // --- Configuration Parameters ---
         final String BOOTSTRAP_SERVERS = config.get("bootstrap.servers");
         final String SCHEMA_REGISTRY_URL = config.get("schema.registry.url");
         final String GROUP_ID = config.get("group.id");
-//        final List<String> TOPIC_LIST = Arrays.stream(config.get("topic.list").split(",")).map(String::trim).toList();
         final CatalogLoader icebergCatalog = FlinkUtils.getIcebergCatalogLoader(config);
         KafkaSource<DynamicRecord> source = KafkaSource.<DynamicRecord>builder()
                 .setBootstrapServers(BOOTSTRAP_SERVERS)
-//                .setTopics(TOPIC_LIST)
                 .setGroupId(GROUP_ID)
                 .setStartingOffsets(OffsetsInitializer.committedOffsets(OffsetResetStrategy.EARLIEST))
                 .setProperty("commit.offsets.on.checkpoint", "true")
                 .setDeserializer(new RecordDeserializer(config))
                 .build();
-        // 2. Read the DataStream
         DataStream<DynamicRecord> rawStream = env.fromSource(
                 source,
                 WatermarkStrategy.noWatermarks(),
                 "Raw Kafka Record Source"
         ).uid(UUID.randomUUID().toString());
 
-        // 3. Process the raw data
-//        rawStream.map(record -> {
-//            String topic = record.topic;
-//            long offset = record.offset;
-//            byte[] rawValue = record.value;
-//            String value = record.rowData;
-//            System.out.printf("Topic: %s, Offset: %d, Raw Value Size: %d bytes\n, data: %s\nSchema: %s\n", topic, offset, rawValue.length, value, record.schema);
-//            return record;
-//        }).print();
 
         DynamicIcebergSink.forInput(rawStream)
                 .generator(new IcebegDynamicRecrodGenerator())

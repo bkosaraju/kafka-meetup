@@ -18,7 +18,8 @@
 
 package org.apache.flink.playground.datagen.model;
 
-import java.time.LocalDateTime;
+import com.github.javafaker.Faker;
+
 import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
@@ -30,6 +31,8 @@ import java.util.stream.Stream;
 public class AccountV1Supplier implements Supplier<AccountV1> {
 
   private final Random generator = new Random();
+  private final Faker faker = new Faker();
+  private final AccountType[] types = AccountType.values();
 
   private final Iterator<Long> accounts =
       Stream.generate(() -> Stream.of(1L, 2L, 3L, 4L, 5L))
@@ -39,7 +42,12 @@ public class AccountV1Supplier implements Supplier<AccountV1> {
   @Override
   public AccountV1 get() {
     AccountV1 accountV1 = new AccountV1();
-    accountV1.setAccountId(accounts.next());
+    accountV1.setAccountId(generator.nextLong(1000000, 9999999));
+    accountV1.setAccountType(types[new Random().nextInt(types.length)]);
+    accountV1.setBalance(generator.nextInt(1000, 1000000));
+    accountV1.setFirstName(faker.name().firstName());
+    accountV1.setLastName(faker.name().lastName());
+    accountV1.setAddress(faker.address().fullAddress());
     accountV1.setAccountName(UUID.randomUUID().toString());
     return accountV1;
   }

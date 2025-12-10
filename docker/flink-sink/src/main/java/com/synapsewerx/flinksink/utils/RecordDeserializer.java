@@ -31,6 +31,7 @@ public class RecordDeserializer implements KafkaRecordDeserializationSchema<Dyna
     SchemaRegUtils  schemaRegUtils;
     private transient AvroGenericRecordToRowDataMapper mapper;
     HashMap<String, String> config;
+    HashMap<String, Boolean> cachedDBObject;
 
     public RecordDeserializer(HashMap<String, String> config) {
         this.config = config;
@@ -42,6 +43,7 @@ public class RecordDeserializer implements KafkaRecordDeserializationSchema<Dyna
         confluentDeserializer.configure(config, false);
         this.avroDeserializer =  confluentDeserializer;
         this.schemaRegUtils = new SchemaRegUtils(config);
+        this.cachedDBObject = new HashMap<>();
         KafkaRecordDeserializationSchema.super.open(context);
     }
 
@@ -88,18 +90,16 @@ public class RecordDeserializer implements KafkaRecordDeserializationSchema<Dyna
 
             try {
                 rowData = mapper.map(injectedGenericRecord);
-                System.out.println("schema = " + schema.toString());
-                System.out.println("consumerRecord = " + deserializedValue.toString());
-                System.out.println("row Data" + rowData);
-                System.out.println("offset = " + consumerRecord.offset());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
             TableIdentifier tableIdentifier = TableIdentifier.of(config.get("iceberg.database"), consumerRecord.topic());
             org.apache.iceberg.Schema icebergSchema = AvroSchemaUtil.toIceberg(schema);
             PartitionSpec partitionSpec = PartitionSpec.unpartitioned();
-            FlinkUtils.createTableIfNotExists(tableIdentifier, icebergSchema, config);
-
+            if (! cachedDBObject.containsKey(tableIdentifier.toString())) {
+                FlinkUtils.createTableIfNotExists(tableIdentifier, icebergSchema, config);
+                cachedDBObject.put(tableIdentifier.toString(), true);
+            }
             DynamicRecord iceBergRecord = new DynamicRecord(
                     tableIdentifier,
                     "main",

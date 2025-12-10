@@ -26,7 +26,7 @@ services:
       - AWS_REGION=us-east-1
   taskmanager:
     image: flink-image:2.0.0-scala_2.12
-    container_name: flink-taskmanager
+#    container_name: flink-taskmanager
     networks:
       cflt-meetup:
     expose:
@@ -35,7 +35,7 @@ services:
     depends_on:
       - jobmanager
     deploy:
-        replicas: 1
+        replicas: 2
     command: taskmanager
     links:
       - jobmanager:jobmanager

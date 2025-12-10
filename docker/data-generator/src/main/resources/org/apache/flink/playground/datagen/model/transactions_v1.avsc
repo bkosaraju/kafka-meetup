@@ -3,17 +3,12 @@
   "name": "TransactionsV1",
   "namespace": "org.apache.flink.playground.datagen.model",
   "fields": [
-    {
-      "name": "accountId",
-      "type": "long"
-    },
-    {
-      "name": "amount",
-      "type": "int"
-    },
-    {
-      "name": "timestamp",
-      "type": "string"
-    }
+    { "name": "transactionId", "type": "string" },
+    { "name": "accountId", "type": "long" },
+    { "name": "amount", "type": "double" },
+    { "name": "currency", "type": "string" },
+    { "name": "timestamp", "type": { "type": "long", "logicalType": "timestamp-millis" } },
+    { "name": "status", "type": { "type": "enum", "name": "Status", "symbols": ["PENDING", "COMPLETED", "FAILED"] } },
+    { "name": "description", "type": ["null", "string"], "default": null }
   ]
 }
