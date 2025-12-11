@@ -18,7 +18,10 @@
 
 package org.apache.flink.playground.datagen.model;
 
+import com.github.javafaker.Faker;
+
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Iterator;
 import java.util.Random;
 import java.util.UUID;
@@ -26,30 +29,36 @@ import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-/** A supplier that generates an arbitrary transaction. */
+/**
+ * A supplier that generates an arbitrary transaction.
+ */
 public class TransactionV1Supplier implements Supplier<TransactionsV1> {
+    private final Faker faker = new Faker();
+    private final Random generator = new Random();
+    private final Status[] types = Status.values();
 
-  private final Random generator = new Random();
 
-  private final Iterator<Long> accounts =
-      Stream.generate(() -> Stream.of(1L, 2L, 3L, 4L, 5L))
-          .flatMap(UnaryOperator.identity())
-          .iterator();
+    private final Iterator<Long> accounts =
+            Stream.generate(() -> Stream.of(1L, 2L, 3L, 4L, 5L))
+                    .flatMap(UnaryOperator.identity())
+                    .iterator();
 
-  private final Iterator<LocalDateTime> timestamps =
-      Stream.iterate(
-              LocalDateTime.of(2000, 1, 1, 1, 0),
-              time -> time.plusMinutes(5).plusSeconds(generator.nextInt(58) + 1))
-          .iterator();
+    private final Iterator<LocalDateTime> timestamps =
+            Stream.iterate(
+                            LocalDateTime.of(2000, 1, 1, 1, 0),
+                            time -> time.plusMinutes(5).plusSeconds(generator.nextInt(58) + 1))
+                    .iterator();
 
-  @Override
-  public TransactionsV1 get() {
-    TransactionsV1 transaction = new TransactionsV1();
-    transaction.setAccountId(accounts.next());
-    transaction.setAmount(generator.nextInt(1000));
-    transaction.setTimestamp(timestamps.next().toString());
-    // Update Schema to add transactionId field
-    transaction.setTransactionId(UUID.randomUUID().toString());
-    return transaction;
-  }
+    @Override
+    public TransactionsV1 get() {
+        TransactionsV1 transaction = new TransactionsV1();
+        transaction.setAccountId(generator.nextLong(1000000, 9999999));
+        transaction.setAmount(generator.nextInt(1000));
+        transaction.setTimestamp(timestamps.next().toInstant(ZoneOffset.UTC));
+        transaction.setTransactionId(UUID.randomUUID().toString());
+        transaction.setCurrency(faker.currency().code());
+        transaction.setDescription(faker.lorem().sentence());
+        transaction.setStatus(types[new Random().nextInt(types.length)]);
+        return transaction;
+    }
 }

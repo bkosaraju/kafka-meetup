@@ -1,0 +1,39 @@
+{
+  "type": "record",
+  "name": "AccountV1",
+  "namespace": "org.apache.flink.playground.datagen.model",
+  "fields": [
+    {
+      "name": "accountId",
+      "type": "long"
+    },
+    {
+      "name": "accountName",
+      "type": "string"
+    },
+    {
+      "name": "accountType",
+      "type": {
+        "type": "enum",
+        "name": "AccountType",
+        "symbols": ["SAVINGS", "CHECKING", "CREDIT"]
+      }
+    },
+    {
+      "name": "balance",
+      "type": "double"
+    },
+    {
+     "name": "firstName",
+     "type": "string"
+    },
+    {
+     "name": "lastName",
+     "type": "string"
+    },
+    {
+    "name": "address",
+     "type": "string"
+    }
+  ]
+}

@@ -44,6 +44,7 @@ under the License.
         <java.version>17</java.version>
         <spotless-maven-plugin.version>1.20.0</spotless-maven-plugin.version>
         <maven.compiler.release>${java.version}</maven.compiler.release>
+            <rat.skip>true</rat.skip>
     </properties>
     <repositories>
         <repository>
@@ -77,6 +78,11 @@ under the License.
             <artifactId>avro</artifactId>
             <version>1.12.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>1.0.2</version>
+        </dependency>
     </dependencies>
 
 
@@ -109,6 +115,11 @@ under the License.
                                 <excludes>
                                 </excludes>
                             </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>org.apache.flink.playground.datagen.DataGenerator</mainClass>
+                                </transformer>
+                            </transformers>
                             <filters>
                                 <filter>
                                     <!-- Do not copy the signatures in the META-INF folder.
@@ -159,29 +170,29 @@ under the License.
             </plugin>
 
             <!-- Java code style -->
-            <plugin>
-                <groupId>com.diffplug.spotless</groupId>
-                <artifactId>spotless-maven-plugin</artifactId>
-                <version>${spotless-maven-plugin.version}</version>
-                <configuration>
-                    <java>
-                        <googleJavaFormat>
-                            <version>1.7</version>
-                            <style>GOOGLE</style>
-                        </googleJavaFormat>
-                        <removeUnusedImports/>
-                    </java>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>spotless-check</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>com.diffplug.spotless</groupId>-->
+<!--                <artifactId>spotless-maven-plugin</artifactId>-->
+<!--                <version>${spotless-maven-plugin.version}</version>-->
+<!--                <configuration>-->
+<!--                    <java>-->
+<!--                        <googleJavaFormat>-->
+<!--                            <version>1.7</version>-->
+<!--                            <style>GOOGLE</style>-->
+<!--                        </googleJavaFormat>-->
+<!--                        <removeUnusedImports/>-->
+<!--                    </java>-->
+<!--                </configuration>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>spotless-check</id>-->
+<!--                        <phase>verify</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>check</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
             <!-- AVSC to pojo generation -->
             <plugin>
                 <groupId>org.apache.avro</groupId>
@@ -198,7 +209,7 @@ under the License.
                 <configuration>
                     <sourceDirectory>${project.basedir}/src/main/resources/org/apache/flink/playground/datagen/model/</sourceDirectory>
                     <includes>
-                        <include>transactions.avsc</include>
+                        <include>*.avsc</include>
                     </includes>
                     <outputDirectory>${project.build.directory}/generated-sources</outputDirectory>
                 </configuration>

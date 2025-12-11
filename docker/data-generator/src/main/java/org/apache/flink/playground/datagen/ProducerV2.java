@@ -18,49 +18,57 @@
 
 package org.apache.flink.playground.datagen;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Properties;
-import org.apache.flink.playground.datagen.model.AccountV1Supplier;
-import org.apache.flink.playground.datagen.model.AccountV1;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.LongSerializer;
 
+import java.lang.reflect.InvocationTargetException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Properties;
+import java.util.function.Supplier;
+
 /** Generates CSV transaction records at a rate */
-public class Producer implements Runnable, AutoCloseable {
+public class ProducerV2<T, V extends Supplier<T>> implements Runnable, AutoCloseable {
 
   private volatile boolean isRunning;
 
   private final String brokers;
+  private final Class<V> supplierClass;
 
-  private final String topic;
+    private final String topic;
   String generatoClasName;
 
-  public Producer(String brokers, String topic) {
+  public ProducerV2(String brokers,  String topic, Class<V> supplierClass) {
     this.brokers = brokers;
-    this.topic = topic;
+      this.supplierClass = supplierClass;
+      this.topic = topic;
     this.isRunning = true;
   }
 
   @Override
   public void run() {
-    KafkaProducer<Long, AccountV1> producer = new KafkaProducer<>(getProperties());
+    KafkaProducer<Long, T> producer = new KafkaProducer<>(getProperties());
 
     Throttler throttler = new Throttler(1);
 
-    AccountV1Supplier transactions = new AccountV1Supplier();
+      V transactions = null;
+      try {
+          transactions = supplierClass.getDeclaredConstructor().newInstance();
+      } catch (Exception e) {
+          throw new RuntimeException(e);
+      }
 
-    while (isRunning) {
+      while (isRunning) {
 
-      AccountV1 transaction = transactions.get();
+      T transaction = transactions.get();
 
       long millis = LocalDateTime.now().atZone(ZoneOffset.UTC).toInstant().toEpochMilli();
 
-      ProducerRecord<Long, AccountV1> record =
-          new ProducerRecord<Long, AccountV1>(
-              topic, null, null, transaction.getAccountId(), transaction);
+      ProducerRecord<Long, T> record =
+          new ProducerRecord<Long, T>(
+              topic, transaction);
       producer.send(record);
 
       try {
